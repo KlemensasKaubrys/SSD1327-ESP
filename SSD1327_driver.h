@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 typedef struct display_t display_t;
 
@@ -19,6 +20,9 @@ void oled_flush_fb(uint8_t **fb, display_t *display);
 void oled_cmd(display_t *display, uint8_t cmd);
 void oled_data(display_t *display, uint8_t *data, size_t len);
 void oled_init(display_t *display);
+uint8_t **fb_alloc(int height, int width);
+void fb_free(uint8_t **fb, int height);
+void fb_clear(uint8_t **fb, int height, int width);
 
 #ifdef SSD1327_IMPLEMENTATION
 #include "freertos/FreeRTOS.h"
@@ -190,6 +194,27 @@ void oled_flush_fb(uint8_t **fb, display_t *display) {
             uint8_t packet = (fb[y][x] << 4) | (fb[y][x + 1] & 0x0F);
             oled_data(display, &packet, 1);
         }
+    }
+}
+
+uint8_t **fb_alloc(int height, int width) {
+    uint8_t **fb = malloc(height * sizeof(uint8_t *));
+    for (int y = 0; y < height; y++) {
+        fb[y] = calloc(width, sizeof(uint8_t));
+    }
+    return fb;
+}
+
+void fb_free(uint8_t **fb, int height) {
+    for (int y = 0; y < height; y++) {
+        free(fb[y]);
+    }
+    free(fb);
+}
+
+void fb_clear(uint8_t **fb, int height, int width) {
+    for (int y = 0; y < height; y++) {
+        memset(fb[y], 0x0, width);
     }
 }
 
